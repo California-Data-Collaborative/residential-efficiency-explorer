@@ -29,100 +29,120 @@ function transition(element, content){
 // visualization components
 function generateQuery(where_clause, allDates=false) {
 	var milliunix_start = new Date(state.startDate).getTime(),
-		milliunix_end = new Date(state.endDate).getTime(),
+	milliunix_end = new Date(state.endDate).getTime(),
 		dayRange = (milliunix_end - milliunix_start)*1.1574*.00000001 + 30.437; // convert milliunix to days
 		
-	
-	
-	var tsQuery = `
-	WITH cte_targets AS
-	(SELECT
-		*,
-		${config.column_names.population} * ${state.gpcd} * 30.437 * 3.06889*10^(-6) + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 * 3.06889*10^(-6) AS target_af,
-		${config.column_names.population} * ${state.gpcd} * 30.437 + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 AS target_gal,
-		${config.column_names.population} * ${state.gpcd} * 30.437 + 1.1*${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 AS u_gal,
-		${config.column_names.population} * ${state.gpcd} * 30.437 + .9*${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 AS l_gal
+
+
+		var tsQuery = `
+		WITH cte_targets AS
+		(SELECT
+			*,
+			${config.column_names.population} * ${state.gpcd} * 30.437 * 3.06889*10^(-6) + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 * 3.06889*10^(-6) AS target_af,
+			${config.column_names.population} * ${state.gpcd} * 30.437 + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 AS target_gal,
+			${config.column_names.population} * ${state.gpcd} * 30.437 + 1.1*${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 AS u_gal,
+			${config.column_names.population} * ${state.gpcd} * 30.437 + .9*${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 AS l_gal
 		FROM ${config.attribute_table}
-		)
-	SELECT
-	*,
-	ROUND(100 * (${config.column_names.usage}*${config.conversion_to_gal} * 3.06889*10^(-6) - target_af) / CAST(target_af AS FLOAT)) percentDifference,
-	ROUND(${config.column_names.usage}*${config.conversion_to_gal} * 3.06889*10^(-6)) af_usage,
-	${config.column_names.usage}*${config.conversion_to_gal} gal_usage
-	FROM
-	cte_targets
-	${where_clause}
-	ORDER BY ${config.column_names.date}
-	`
-
-	var query = `
-	WITH cte_otf AS
-	(SELECT
-		${config.geometry_table}.the_geom_webmercator,
-		${config.geometry_table}.cartodb_id,
-		${config.geometry_table}.${config.column_names.unique_id},
-		${config.attribute_table}.${config.column_names.population},
-		${config.attribute_table}.${config.column_names.irrigable_area},
-		${config.attribute_table}.${config.column_names.average_eto},
-		${config.attribute_table}.${config.column_names.usage},
-		${config.attribute_table}.${config.column_names.date},
-		${config.attribute_table}.${config.column_names.hr_name} hr_name
+			)
+		SELECT
+			*,
+			ROUND(100 * (${config.column_names.usage}*${config.conversion_to_gal} * 3.06889*10^(-6) - target_af) / CAST(target_af AS FLOAT)) percentDifference,
+			ROUND(${config.column_names.usage}*${config.conversion_to_gal} * 3.06889*10^(-6)) af_usage,
+			${config.column_names.usage}*${config.conversion_to_gal} gal_usage
 		FROM
-		${config.geometry_table},
-		${config.attribute_table}
-		WHERE
-		${config.geometry_table}.${config.column_names.unique_id} = ${config.attribute_table}.${config.column_names.unique_id}
-		
-		),
-	cte_targets AS
-	(SELECT     
-		the_geom_webmercator,
-		Min(cartodb_id) cartodb_id,
-		Min(hr_name) hr_name,
-		${config.column_names.unique_id},
-		ROUND(AVG(${config.column_names.population})) population,
-		SUM(${config.column_names.usage}*${config.conversion_to_gal}) * 3.06889*10^(-6) af_usage,
-		SUM(${config.column_names.usage}*${config.conversion_to_gal}) gal_usage,
-		AVG(${config.column_names.average_eto}) avg_eto,
-		AVG(${config.column_names.irrigable_area}) irr_area,
-		SUM(${config.column_names.population} * ${state.gpcd} * 30.437 * 3.06889*10^(-6) + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 * 3.06889*10^(-6)) AS target_af,
-		SUM(${config.column_names.population} * ${state.gpcd} * 30.437 + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62) AS target_gal
-		FROM cte_otf
+			cte_targets
 		${where_clause}
-		
-		GROUP BY ${config.column_names.unique_id}, the_geom_webmercator)
+		ORDER BY
+			${config.column_names.date}
+		`
 
-	SELECT
-	*,
-	ROUND(100 * (gal_usage - target_gal) / CAST(target_gal AS FLOAT)) percentDifference,
-	ROUND(CAST(af_usage AS NUMERIC), 2) - ROUND(CAST(target_af AS NUMERIC), 2) usageDifference,
-	ROUND(CAST(target_af AS NUMERIC), 2) target_af_round
+		var query = `
+		WITH cte_record_cnt AS (
+		SELECT
+			COUNT(*) record_cnt, ${config.column_names.unique_id} unique_id,
+			(DATE_PART('year', '${state.endDate}'::date) - DATE_PART('year', '${state.startDate}'::date)) * 12 +
+			(DATE_PART('month', '${state.endDate}'::date) - DATE_PART('month', '${state.startDate}'::date) + 1) month_count
+		FROM
+			${config.attribute_table}
+		${where_clause}
+		GROUP BY
+			${config.column_names.unique_id}
 
-	FROM
-	cte_targets
+			),
 
 
+		cte_otf AS
+		(SELECT
+			${config.geometry_table}.the_geom_webmercator,
+			${config.geometry_table}.cartodb_id,
+			${config.geometry_table}.${config.column_names.unique_id},
+			${config.attribute_table}.${config.column_names.population},
+			${config.attribute_table}.${config.column_names.irrigable_area},
+			${config.attribute_table}.${config.column_names.average_eto},
+			${config.attribute_table}.${config.column_names.usage},
+			${config.attribute_table}.${config.column_names.date},
+			${config.attribute_table}.${config.column_names.hr_name} hr_name
+		FROM
+			${config.geometry_table},
+			${config.attribute_table}
+		WHERE
+			${config.geometry_table}.${config.column_names.unique_id} = ${config.attribute_table}.${config.column_names.unique_id}
 
-	ORDER BY
-	percentDifference
-	`
+			),
+		cte_targets AS
+		(SELECT     
+			the_geom_webmercator,
+			Min(cartodb_id) cartodb_id,
+			Min(hr_name) hr_name,
+			${config.column_names.unique_id},
+			ROUND(AVG(${config.column_names.population})) population,
+			SUM(${config.column_names.usage}*${config.conversion_to_gal}) * 3.06889*10^(-6) af_usage,
+			SUM(${config.column_names.usage}*${config.conversion_to_gal}) gal_usage,
+			AVG(${config.column_names.average_eto}) avg_eto,
+			AVG(${config.column_names.irrigable_area}) irr_area,
+			SUM(${config.column_names.population} * ${state.gpcd} * 30.437 * 3.06889*10^(-6) + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 * 3.06889*10^(-6)) AS target_af,
+			SUM(${config.column_names.population} * ${state.gpcd} * 30.437 + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62) AS target_gal
+		FROM cte_otf
+			${where_clause}
 
-	if (allDates == true) {
-		return tsQuery
-	} else { 
-		return query
-	}
-};
+		GROUP BY
+			${config.column_names.unique_id}, the_geom_webmercator)
 
-function tsSetup() {
-	
-	var markers = [	{[`${config.column_names.date}`]: new Date(state.startDate), "label": "SCENARIO START DATE"},
-					{[`${config.column_names.date}`]: new Date(state.endDate), "label": "SCENARIO END DATE"}
-				],
+		SELECT
+			*,
+			ROUND(100 * (gal_usage - target_gal) / CAST(target_gal AS FLOAT)) percentDifference,
+			ROUND(CAST(af_usage AS NUMERIC), 2) - ROUND(CAST(target_af AS NUMERIC), 2) usageDifference,
+			ROUND(CAST(target_af AS NUMERIC), 2) target_af_round
+
+		FROM
+			cte_targets, cte_record_cnt
+		WHERE
+			cte_record_cnt.unique_id = cte_targets.${config.column_names.unique_id}
+		AND
+			record_cnt - month_count = 0
+
+		ORDER BY
+			percentDifference
+		`
+
+		if (allDates == true) {
+			console.log(tsQuery)
+			return tsQuery
+		} else { 
+			console.log(query)
+			return query
+		}
+	};
+
+	function tsSetup() {
+
+		var markers = [	{[`${config.column_names.date}`]: new Date(state.startDate), "label": "SCENARIO START DATE"},
+		{[`${config.column_names.date}`]: new Date(state.endDate), "label": "SCENARIO END DATE"}
+		],
 		query = generateQuery(where_clause=`WHERE ${config.column_names.unique_id} = ${state.placeID}`, allDates=true),
 		encoded_query = encodeURIComponent(query),
 		url = `https://${config.account}.carto.com/api/v2/sql?q=${encoded_query}`;
-	$.getJSON(url, function(utilityData) {
+		$.getJSON(url, function(utilityData) {
 		var tsData = MG.convert.date(utilityData.rows, config.column_names.date, '%Y-%m-%dT%XZ'); // is this necessary?
 		MG.data_graphic({
 			data: tsData,
@@ -175,24 +195,24 @@ function standardsSetup() {
 
 function sliderSetup(datesTarget, tsTarget, legendTarget) {
 	var formatter = d3.time.format("%b %Y"),
-		parser = d3.time.format("%Y-%m-%dT%XZ"),
-		dates = $.map(globals.dateData.rows, function(el) {
-					var tempDate = parser.parse(el[config.column_names.date]);
-					return (tempDate.getTime())
-				}).sort()
+	parser = d3.time.format("%Y-%m-%dT%XZ"),
+	dates = $.map(globals.dateData.rows, function(el) {
+		var tempDate = parser.parse(el[config.column_names.date]);
+		return (tempDate.getTime())
+	}).sort()
 
 	var datesLength = dates.length - 1,
-		startPosition = (
-			dates.indexOf(
-				parser.parse(state.startDate).getTime()
-				)
-			),
-		endPosition = (
-			dates.indexOf(
-				parser.parse(state.endDate).getTime()
+	startPosition = (
+		dates.indexOf(
+			parser.parse(state.startDate).getTime()
+			)
+		),
+	endPosition = (
+		dates.indexOf(
+			parser.parse(state.endDate).getTime()
 			)
 		);
-		
+
 
 	$("#range_slider").slider({
 		range: true,
@@ -202,8 +222,8 @@ function sliderSetup(datesTarget, tsTarget, legendTarget) {
 		values: [startPosition, endPosition],
 		stop: function (event, ui) {
 			var formatter = d3.time.format("%Y-%m-%dT%XZ"),
-				startDate = dates[ui.values[0]],
-				endDate = dates[ui.values[1]]
+			startDate = dates[ui.values[0]],
+			endDate = dates[ui.values[1]]
 			
 			state.startDate = `${formatter(new Date(startDate))}`
 			state.endDate = `${formatter(new Date(endDate))}`
@@ -213,12 +233,12 @@ function sliderSetup(datesTarget, tsTarget, legendTarget) {
 		},
 		slide: function(event, ui) {
 			var start = new Date(dates[ui.values[0]]),
-				end = new Date(dates[ui.values[1]]);
+			end = new Date(dates[ui.values[1]]);
 			$("#cal").val(`${formatter(start)} - ${formatter(end)}`);
 		}
 	});
 	var start = new Date(dates[$("#range_slider").slider("values", 0)]),
-		end = new Date(dates[$("#range_slider").slider("values", 1)])
+	end = new Date(dates[$("#range_slider").slider("values", 1)])
 	$("#cal").val(`${formatter(start)} - ${formatter(end)}`);
 }
 
@@ -287,22 +307,22 @@ var placeLayer = {
     	});
 
     	layer.on('loading', function() {
-    		 query = generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false);
-    		 encoded_query = encodeURIComponent(query);
+    		query = generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false);
+    		encoded_query = encodeURIComponent(query);
     		 url = `https://${config.account}.carto.com/api/v2/sql?q=${encoded_query}`;
     		 $.getJSON(url, function(utilityData) {
     		 	for (row in utilityData.rows) {
     		 		if (utilityData.rows[row][config.column_names.unique_id] == state.placeID) {
     		 			var target_af = utilityData.rows[row].target_af_round,
-    		 				usagedifference = utilityData.rows[row].usagedifference,
-    		 				percentdifference = utilityData.rows[row].percentdifference,
-    		 				hrName = utilityData.rows[row].hr_name;
+    		 			usagedifference = utilityData.rows[row].usagedifference,
+    		 			percentdifference = utilityData.rows[row].percentdifference,
+    		 			hrName = utilityData.rows[row].hr_name;
     		 			summarySentence_dm(usagedifference, percentdifference, target_af, hrName);
     		 			showFeature(utilityData.rows[row].cartodb_id);
     		 		};
     		 	};
     		 });
-    	});
+    		});
 
     	
     	globals.sublayers[0].on('featureOver', function(e, latlng, pos, data) {
@@ -317,9 +337,9 @@ var placeLayer = {
     		showFeature(data.cartodb_id)
     		state.placeID = data[config.column_names.unique_id];
     		var target_af = data.target_af_round,
-    		 	usagedifference = data.usagedifference,
-    		 	percentdifference = data.percentdifference,
-    		 	hrName = data.hr_name;
+    		usagedifference = data.usagedifference,
+    		percentdifference = data.percentdifference,
+    		hrName = data.hr_name;
     		summarySentence_dm(usagedifference, percentdifference, target_af, hrName);
     		tsSetup(data.af_usage)
     		console.log(`irrigated area: ${data.irr_area}`)
