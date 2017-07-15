@@ -127,10 +127,8 @@ function generateQuery(where_clause, allDates=false) {
 
 		if (allDates == true) {
 			console.log(tsQuery)
-			return tsQuery
 		} else { 
 			console.log(query)
-			return query
 		}
 	};
 
