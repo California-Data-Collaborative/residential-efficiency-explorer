@@ -115,15 +115,17 @@ function generateQuery(where_clause, allDates=false) {
 			ROUND(CAST(target_af AS NUMERIC), 2) target_af_round
 
 		FROM
-			cte_targets, cte_record_cnt
-		WHERE
-			cte_record_cnt.unique_id = cte_targets.${config.column_names.unique_id}
-		AND
-			record_cnt - month_count = 0
+			cte_targets
 
 		ORDER BY
 			percentDifference
 		`
+
+		// , cte_record_cnt
+		// WHERE
+		// 	cte_record_cnt.unique_id = cte_targets.${config.column_names.unique_id}
+		// AND
+		// 	record_cnt - month_count = 0
 
 		if (allDates == true) {
 			return tsQuery
@@ -133,7 +135,6 @@ function generateQuery(where_clause, allDates=false) {
 	};
 
 	function tsSetup() {
-
 		var markers = [	{[`${config.column_names.date}`]: new Date(state.startDate), "label": "SCENARIO START DATE"},
 		{[`${config.column_names.date}`]: new Date(state.endDate), "label": "SCENARIO END DATE"}
 		],
@@ -141,7 +142,13 @@ function generateQuery(where_clause, allDates=false) {
 		encoded_query = encodeURIComponent(query),
 		url = `https://${config.account}.carto.com/api/v2/sql?q=${encoded_query}`;
 		$.getJSON(url, function(utilityData) {
-		var tsData = MG.convert.date(utilityData.rows, config.column_names.date, '%Y-%m-%dT%XZ'); // is this necessary?
+			// currently this parser is being defined in multiple places
+			// for dryness, we may want to define it only once elsewhere
+			var parser = d3.time.format("%Y-%m-%dT%XZ"),
+			mn = new Date(parser.parse(globals.dateData.rows[globals.dateData.total_rows - 1][config.column_names.date])),
+			mx = new Date(parser.parse(globals.dateData.rows[0][config.column_names.date])),
+			tsData = MG.convert.date(utilityData.rows, config.column_names.date, '%Y-%m-%dT%XZ'); // is this necessary?
+
 		MG.data_graphic({
 			data: tsData,
 			full_width: true,
@@ -151,8 +158,8 @@ function generateQuery(where_clause, allDates=false) {
 			markers: markers,
 			xax_format: d3.time.format('%b'),
 			y_label: 'Water Volume (Gal)',
-			min_x: utilityData.rows[0][config.column_names.date], // probably should generate with min and max of dataset, not utility.
-			max_x: utilityData.rows[utilityData.total_rows - 1][config.column_names.date], // this would highlight missing data
+			min_x: mn,//utilityData.rows[0][config.column_names.date],
+			max_x: mx,//utilityData.rows[utilityData.total_rows - 1][config.column_names.date],
 			aggregate_rollover: true,
 			show_confidence_band: ['l_gal', 'u_gal'],
 			decimals: 0,
