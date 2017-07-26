@@ -2,12 +2,75 @@
 nav_height = $(".navbar").height();
 
 function styleSetup() {
-	$("body").css("padding-top", nav_height);
-	$(".section, #map").css("height", `calc(100vh - ${nav_height}px)`);
-	var ts_height = $("#map").height() - $("#filters").height() - $("#tsTitles").height() - 146; // the last term depends on the size of the elements above the chart
-	$("#ts").css("height", ts_height);
-	$(window).resize(function(){location.reload()});
+	
+	// make sure correct section is highlighted
+	function selectSection(){
+		var window_top = 1.5*$(window).scrollTop();
+		var div_top = $('#intraUtility').offset().top - nav_height;
+		if (window_top < div_top) {
+			makeSelected('#aboutLink')
+		} else {
+			makeSelected('#intraULink')
+		}
+	}
+
+	$(function() {
+		$(window).scroll(selectSection);
+		selectSection();
+	});
+
+	// dynamic padding and div sizing on window resize
+	function dynamicPadding() {
+		if ($(window).width() < 993){
+			$(".noleftpadding")
+			.removeClass("noleftpadding")
+			.addClass("tempPadding")
+
+		} else {
+			$(".tempPadding")
+			.removeClass("tempPadding")
+			.addClass("noleftpadding")
+		}
+	}
+
+	function dynamicSizing() {
+		$("#extraUtility").css("min-height", `calc(100vh - ${nav_height}px)`);
+		$("#map, #scenarioBuilder").css("height", `calc(100vh - ${nav_height}px)`);
+		$("body").css("padding-top", nav_height)
+
+	}
+
+	dynamicPadding()
+	dynamicSizing()
+
+	$(window).resize(function(){
+		nav_height = $(".navbar").height();
+		dynamicSizing()
+		dynamicPadding()
+		tsSetup()
+	});
+
+	// turn popovers on, and open landscape area quality considerations
+	// $(function () {
+	// 	$('[data-toggle="popover"]').popover()
+	// 	// $('#landscapeArea').popover({
+	// 	// 	'placement':'bottom',
+	// 	// 	'trigger': 'focus',
+	// 	// 	'tabindex': "0"
+	// 	// })
+	// 	// .popover('show')
+	// 	// .focus()
+	// 	// $('.popover-content').scrollTop(730);
+	// })
 };
+
+// function styleSetup() {
+// 	$("body").css("padding-top", nav_height);
+// 	$(".section, #map").css("height", `calc(100vh - ${nav_height}px)`);
+// 	var ts_height = $("#map").height() - $("#filters").height() - $("#tsTitles").height() - 146; // the last term depends on the size of the elements above the chart
+// 	$("#ts").css("height", ts_height);
+// 	// $(window).resize(function(){location.reload()});
+// };
 
 function makeSelected(element) {
 	$(".selected").removeClass("selected");
@@ -135,8 +198,8 @@ function generateQuery(where_clause, allDates=false) {
 	};
 
 	function tsSetup() {
-		var markers = [	{[`${config.column_names.date}`]: new Date(state.startDate), "label": "SCENARIO START DATE"},
-		{[`${config.column_names.date}`]: new Date(state.endDate), "label": "SCENARIO END DATE"}
+		var markers = [	{[`${config.column_names.date}`]: new Date(state.startDate), "label": "START DATE"},
+		{[`${config.column_names.date}`]: new Date(state.endDate), "label": "END DATE"}
 		],
 		query = generateQuery(where_clause=`WHERE ${config.column_names.unique_id} = ${state.placeID}`, allDates=true),
 		encoded_query = encodeURIComponent(query),
@@ -152,7 +215,7 @@ function generateQuery(where_clause, allDates=false) {
 		MG.data_graphic({
 			data: tsData,
 			full_width: true,
-			full_height: true,
+			// full_height: true,
 			y_extended_ticks: true,
 			x_extended_ticks: true,
 			markers: markers,
@@ -199,7 +262,8 @@ function standardsSetup() {
 };
 
 function sliderSetup(datesTarget, tsTarget, legendTarget) {
-	var formatter = d3.time.format("%b %Y"),
+	var formatter_short = d3.time.format("%b %Y"),
+	formatter_long = d3.time.format("%Y-%m-%dT%XZ"),
 	parser = d3.time.format("%Y-%m-%dT%XZ"),
 	dates = $.map(globals.dateData.rows, function(el) {
 		var tempDate = parser.parse(el[config.column_names.date]);
@@ -226,31 +290,37 @@ function sliderSetup(datesTarget, tsTarget, legendTarget) {
 		step: 1,
 		values: [startPosition, endPosition],
 		stop: function (event, ui) {
-			var formatter = d3.time.format("%Y-%m-%dT%XZ"),
-			startDate = dates[ui.values[0]],
+			var startDate = dates[ui.values[0]],
 			endDate = dates[ui.values[1]]
 			
-			state.startDate = `${formatter(new Date(startDate))}`
-			state.endDate = `${formatter(new Date(endDate))}`
+			state.startDate = `${formatter_long(new Date(startDate))}`
+			state.endDate = `${formatter_long(new Date(endDate))}`
 			query = generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false);
 			globals.sublayers[0].setSQL(query);
 			tsSetup();
 		},
 		slide: function(event, ui) {
+			var startDate = dates[ui.values[0]],
+			endDate = dates[ui.values[1]]
+			
+			state.startDate = `${formatter_long(new Date(startDate))}`
+			state.endDate = `${formatter_long(new Date(endDate))}`
+			tsSetup()
 			var start = new Date(dates[ui.values[0]]),
 			end = new Date(dates[ui.values[1]]);
-			$("#cal").val(`${formatter(start)} - ${formatter(end)}`);
+			$("#cal").val(`${formatter_short(start)} - ${formatter_short(end)}`);
 		}
 	});
 	var start = new Date(dates[$("#range_slider").slider("values", 0)]),
 	end = new Date(dates[$("#range_slider").slider("values", 1)])
-	$("#cal").val(`${formatter(start)} - ${formatter(end)}`);
+	$("#cal").val(`${formatter_short(start)} - ${formatter_short(end)}`);
 }
 
 function mapSetup_dm() {
 	var map = new L.Map("map", {
 		center: config.coordinates,
-		zoom: config.zoom
+		zoom: config.zoom,
+		scrollWheelZoom:false
 	});
 
 // Highlight feature setup below based on: http://bl.ocks.org/javisantana/d20063afd2c96a733002

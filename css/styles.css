@@ -1,6 +1,6 @@
 body {
 	background-color: #222;
-  overflow: hidden;
+  /*overflow: hidden;*/
   font-size: 130%;
 }
 
@@ -61,6 +61,11 @@ td {
 .nopadding {
    padding: 0 !important;
    margin: 0 !important;
+}
+
+.noleftpadding {
+ padding-left: 0 !important;
+ margin: 0 !important;
 }
 
 .section {
