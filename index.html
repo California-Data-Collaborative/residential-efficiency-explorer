@@ -85,7 +85,7 @@
         By setting values for GPCD (gallons per capita per day) and ET Adjustment Factor, managers can use this tool to investigate how different standards for residential water use affect their agencies over different periods of time.
       </p>
       <p>
-        Specifically, the tool consists of a map for selecting a place, and a Scenario Builder panel for (1) selecting Date Range, GPCD, and ET Adjustment Factor; and (2) viewing results (residential usage target, number of acre-feet over or under target for current scenario, and a time series graph for comparing target usage to actual usage over time). 
+        Specifically, the tool consists of a map for selecting a census block, and a Scenario Builder panel for (1) selecting Date Range, GPCD, and ET Adjustment Factor; and (2) viewing results (residential usage target, number of acre-feet over or under target for current scenario, and a time series graph for comparing target usage to actual usage over time). 
       </p>
       <p>
         Use the navigation bar links above to scroll between the tool and this instructions page. For best experience, please use Chrome and set your browser window to full screen.
@@ -99,7 +99,20 @@
       <div id="tsSection">
         <div id="tsTitles">
           <h2>Scenario Builder</h2>
-          <p id='summarySentence'>&nbsp;</p>
+          <div class="form-group">
+        <label for="hrName">FIPS code</label>
+        <div class="input-group">
+          <span class="input-group-addon" id="search-addon">
+            <i class="glyphicon glyphicon-search"></i>
+          </span>
+          <input type="text" class="form-control" id="hrName" aria-describedby="search-addon">
+        </div>
+      </div>
+          <p style="display: inline" id='summarySentence'>
+            <b>Residential Usage Target: </b><div style="display: inline" id="targetValue"></div><br>
+            <b>Residential Use: </b> <div style="display: inline" id="usage"></div><br>
+            <b>Efficiency: </b><div style="display: inline" id="efficiency"></div>
+          </p>
         </div>
         <div id='tsContainer'>
           <div id="ts"></div>

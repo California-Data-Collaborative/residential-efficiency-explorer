@@ -175,7 +175,8 @@ function generateQuery(where_clause, allDates=false) {
 			*,
 			ROUND(100 * (gal_usage - target_gal) / CAST(target_gal AS FLOAT)) percentDifference,
 			ROUND(CAST(af_usage AS NUMERIC), 2) - ROUND(CAST(target_af AS NUMERIC), 2) usageDifference,
-			ROUND(CAST(target_af AS NUMERIC), 2) target_af_round
+			ROUND(CAST(target_af AS NUMERIC), 2) target_af_round,
+			ROUND(CAST(af_usage AS NUMERIC), 2) af_usage_round
 
 		FROM
 			cte_targets
@@ -322,6 +323,57 @@ function mapSetup_dm() {
 		zoom: config.zoom,
 		scrollWheelZoom:false
 	});
+	function searchSetup() {
+	//reference: http://bl.ocks.org/javisantana/7932459
+	var sql = cartodb.SQL({ user: config.account });
+	$( "#hrName" )
+	.autocomplete({
+		source: function( request, response ) {
+			var s
+			sql.execute(
+				`
+				SELECT DISTINCT ${config.column_names.hr_name}
+				FROM ${config.attribute_table}
+				WHERE ${config.column_names.hr_name}::text ilike '%${request.term}%'`
+				).done(function(data) {
+					response(data.rows.map(function(r) {
+						return {
+							label: r[config.column_names.hr_name],
+							value: r[config.column_names.hr_name]
+						}
+					})
+					)
+				})
+			},
+			minLength: 4,
+			select: function( event, ui ) {
+				state.hrName = ui.item.value;
+				query = generateQuery(where_clause=`WHERE ${config.column_names.hr_name} = '${state.hrName}' AND ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, queryType=false);
+				sql.execute(query).done(function(data){
+
+					showFeature(data.rows[0].cartodb_id)
+					state.placeID = data.rows[0][config.column_names.unique_id];
+					var target_af = data.rows[0].target_af_round,
+					usagedifference = data.rows[0].usagedifference,
+					percentdifference = data.rows[0].percentdifference,
+					hrName = data.rows[0].hr_name;
+					usage = data.rows[0].af_usage_round,
+					// uncertainty = data.rows[0].uncertainty,
+
+					// latLng = new L.LatLng(data.rows[0].lat, data.rows[0].lon);
+					// map.panTo(latLng);
+
+					summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage, place_change = true);
+					tsSetup()
+
+					console.log(`irrigated area: ${data.rows[0].irr_area}`)
+					console.log(`average eto: ${data.rows[0].avg_eto}`)
+
+				})
+
+			}
+		});
+};
 
 // Highlight feature setup below based on: http://bl.ocks.org/javisantana/d20063afd2c96a733002
 var sql = new cartodb.SQL( {
@@ -351,7 +403,7 @@ var placeLayer = {
 	sublayers: [{
 		sql: generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false),
 		cartocss: cartography.cartocss,
-		interactivity: ['cartodb_id', 'irr_area', 'avg_eto', 'usagedifference', 'percentdifference', 'target_af_round', 'target_af', 'population', 'gal_usage', 'af_usage', 'target_gal', 'hr_name', `${config.column_names.unique_id}`]
+		interactivity: ['cartodb_id', 'irr_area', 'avg_eto', 'usagedifference', 'percentdifference', 'target_af_round', 'target_af', 'population', 'gal_usage', 'af_usage', 'af_usage_round', 'target_gal', 'hr_name', `${config.column_names.unique_id}`]
 	}]
 };
 
@@ -391,8 +443,9 @@ var placeLayer = {
     		 			var target_af = utilityData.rows[row].target_af_round,
     		 			usagedifference = utilityData.rows[row].usagedifference,
     		 			percentdifference = utilityData.rows[row].percentdifference,
-    		 			hrName = utilityData.rows[row].hr_name;
-    		 			summarySentence_dm(usagedifference, percentdifference, target_af, hrName);
+    		 			hrName = utilityData.rows[row].hr_name,
+    		 			usage = utilityData.rows[row].af_usage_round;
+    		 			summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage);
     		 			showFeature(utilityData.rows[row].cartodb_id);
     		 		};
     		 	};
@@ -414,28 +467,37 @@ var placeLayer = {
     		var target_af = data.target_af_round,
     		usagedifference = data.usagedifference,
     		percentdifference = data.percentdifference,
-    		hrName = data.hr_name;
-    		summarySentence_dm(usagedifference, percentdifference, target_af, hrName);
+    		hrName = data.hr_name,
+    		usage = data.af_usage_round;
+    		summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage, place_change = true);
     		tsSetup(data.af_usage)
     		console.log(`irrigated area: ${data.irr_area}`)
     		console.log(`average eto: ${data.avg_eto}`)
     		
     	});
+    	searchSetup()
     });
 };
 
-function summarySentence_dm(usageDifference, percentDifference, targetValue, hrName){
+function summarySentence_dm(usageDifference, percentDifference, targetValue, hrName, usage, place_change = false){
 	if (usageDifference < 0) {
 		var differenceDescription = 'under'
 	} else {
 		var differenceDescription = 'over'
 	}
-	var summary = `
-	<b>Place:</b> ${hrName}<br>
-	<b>Residential Usage Target:</b> ${targetValue} acre-feet<br>
-	<b>Efficiency:</b> ${Math.abs(usageDifference)} acre-feet <em>${differenceDescription}</em> target in this scenario | ${percentDifference}%
-	`
-	transition("#summarySentence", summary)
+	// var summary = `
+	// <b>Place:</b> ${hrName}<br>
+	// <b>Residential Usage Target:</b> ${targetValue} acre-feet<br>
+	// <b>Efficiency:</b> ${Math.abs(usageDifference)} acre-feet <em>${differenceDescription}</em> target in this scenario | ${percentDifference}%
+	// `
+	transition("#targetValue", targetValue + " AF")
+	transition("#usage", usage + " AF")
+	transition("#efficiency", `${Math.abs(usageDifference)} AF <em>${differenceDescription}</em> target in this scenario | ${percentDifference}%`)
+	if (place_change == true){
+		$("#hrName").val(hrName)
+		//transition("#hrName", hrName)
+	}
+	// transition("#summarySentence", summary)
 };
 
 

@@ -1,6 +1,7 @@
 body {
 	background-color: #222;
-  /*overflow: hidden;*/
+  /*scroll lock*/
+  /*overflow: hidden; */
   font-size: 130%;
 }
 
@@ -53,6 +54,10 @@ td {
   font-size: 93%;
 }
 
+#scenarioBuilder {
+  overflow-y: scroll !important;
+}
+
 .navbar-inverse .navbar-brand {
     color: white;
     padding-left: 0px !important;
@@ -100,6 +105,29 @@ td {
 
 #map {
 	width: 100%;
+}
+
+.ui-autocomplete {
+  padding: 6px 12px;
+  border-radius: 4px;
+  webkit-border-radius: 4px;
+  -moz-border-radius: 4px;  
+}
+
+.ui-autocomplete .ui-state-hover,
+.ui-autocomplete .ui-widget-content .ui-state-hover,
+.ui-autocomplete .ui-widget-header .ui-state-hover,
+.ui-autocomplete .ui-state-focus,
+.ui-autocomplete .ui-widget-content .ui-state-focus,
+.ui-autocomplete .ui-widget-header .ui-state-focus,
+.ui-autocomplete .ui-button:hover,
+.ui-autocomplete .ui-button:focus {
+  padding: 1px 2px;
+  border-radius: 4px;
+  webkit-border-radius: 4px;
+  -moz-border-radius: 4px; 
+  background-color: #eee !important;
+  border: none !important;
 }
 
 .pointer {

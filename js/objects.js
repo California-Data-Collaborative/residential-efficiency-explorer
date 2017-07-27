@@ -26,6 +26,7 @@ function dataSetup(callback) {
 		randIdx =  Math.floor(Math.random() * (max - min)) + min,
 		randomPlace = idData.rows[randIdx][config.column_names.unique_id];
 		state.placeID = randomPlace
+		$("#hrName").val(randomPlace)
 		// calculate most recent full^* month and 1 year back for default end and start dates, respectively
 		// ^*I exclude the actual most recent month because not every block contains these data
 		query = `	SELECT DISTINCT ${config.column_names.date}
@@ -56,7 +57,7 @@ var cartography = {
 	`
 	<div class="cartodb-tooltip-content-wrapper light">
 	<div class="cartodb-tooltip-content">
-	<h4>Place</h4>
+	<h4>FIPS code</h4>
 	<p>{{hr_name}}</p>
 	<h4>Percent Over/Under Target</h4>
 	<p>{{percentdifference}}%</p>
