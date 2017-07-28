@@ -92,8 +92,8 @@ td {
 	background-color: white;
 }
 
-#cal {
-	cursor: default;
+#cal, #popData {
+	cursor: text;
 }
 
 
