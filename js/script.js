@@ -115,7 +115,11 @@ function generateQuery(where_clause, allDates=false) {
 			)
 		SELECT
 			*,
-			ROUND(100 * (${config.column_names.usage}*${config.conversion_to_gal} * 3.06889*10^(-6) - target_af) / CAST(target_af AS FLOAT)) percentDifference,
+			CASE
+				WHEN target_af != 0
+				THEN ROUND(100 * (${config.column_names.usage}*${config.conversion_to_gal} * 3.06889*10^(-6) - target_af) / CAST(target_af AS FLOAT))
+				ELSE NULL
+			END percentDifference,
 			ROUND(${config.column_names.usage}*${config.conversion_to_gal} * 3.06889*10^(-6)) af_usage,
 			${config.column_names.usage}*${config.conversion_to_gal} gal_usage
 		FROM
@@ -179,7 +183,11 @@ function generateQuery(where_clause, allDates=false) {
 
 		SELECT
 			*,
-			ROUND(100 * (gal_usage - target_gal) / CAST(target_gal AS FLOAT)) percentDifference,
+			CASE
+				WHEN target_gal != 0
+				THEN ROUND(100 * (gal_usage - target_gal) / CAST(target_gal AS FLOAT))
+				ELSE NULL
+			END percentDifference,
 			ROUND(CAST(af_usage AS NUMERIC), 2) - ROUND(CAST(target_af AS NUMERIC), 2) usageDifference,
 			ROUND(CAST(target_af AS NUMERIC), 2) target_af_round,
 			ROUND(CAST(af_usage AS NUMERIC), 2) af_usage_round
