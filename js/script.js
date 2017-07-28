@@ -22,14 +22,22 @@ function styleSetup() {
 	// dynamic padding and div sizing on window resize
 	function dynamicPadding() {
 		if ($(window).width() < 993){
-			$(".noleftpadding")
-			.removeClass("noleftpadding")
-			.addClass("tempPadding")
+			$(".halfleftpadding")
+			.removeClass("halfleftpadding")
+			.addClass("templeftPadding")
+
+			$(".halfrightpadding")
+			.removeClass("halfrightpadding")
+			.addClass("temprightPadding")
 
 		} else {
-			$(".tempPadding")
-			.removeClass("tempPadding")
-			.addClass("noleftpadding")
+			$(".templeftPadding")
+			.removeClass("templeftPadding")
+			.addClass("halfleftpadding")
+
+			$(".temprightPadding")
+			.removeClass("temprightPadding")
+			.addClass("halfrightpadding")
 		}
 	}
 
@@ -50,17 +58,15 @@ function styleSetup() {
 		tsSetup()
 	});
 
-	// turn popovers on, and open landscape area quality considerations
+	//turn popovers on, and open landscape area quality considerations
 	// $(function () {
 	// 	$('[data-toggle="popover"]').popover()
-	// 	// $('#landscapeArea').popover({
-	// 	// 	'placement':'bottom',
-	// 	// 	'trigger': 'focus',
-	// 	// 	'tabindex': "0"
-	// 	// })
-	// 	// .popover('show')
-	// 	// .focus()
-	// 	// $('.popover-content').scrollTop(730);
+	// 	$('#popData-addon').popover({
+	// 		'placement':'right',
+	// 		'trigger': 'focus',
+	// 		'tabindex': "0"
+	// 	})
+	// 	$('.popover-content').scrollTop(730);
 	// })
 };
 
@@ -230,7 +236,7 @@ function generateQuery(where_clause, allDates=false) {
         	target: "#ts", // the html element that the graphic is inserted in
         	x_accessor: config.column_names.date,  // the key that accesses the x value
         	y_accessor: ['target_gal', 'gal_usage'], // the key that accesses the y value
-        	legend:  ['Target', 'Usage'],
+        	legend:  ['Target', 'Water Use'],
         	legend_target: "#tsLegend"
         });
 		d3.selectAll('.label')
@@ -315,7 +321,20 @@ function sliderSetup(datesTarget, tsTarget, legendTarget) {
 	var start = new Date(dates[$("#range_slider").slider("values", 0)]),
 	end = new Date(dates[$("#range_slider").slider("values", 1)])
 	$("#cal").val(`${formatter_short(start)} - ${formatter_short(end)}`);
-}
+};
+
+function dataToggle(displayForm_id, colName_id, setup=false) {
+	dataName = $(colName_id).html()
+	$(displayForm_id).val(dataName);
+
+	config.column_names.population = colName_id.substring(1)
+
+	if (setup == false){
+		var query = generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false);
+		globals.sublayers[0].setSQL(query);
+		tsSetup();
+	}
+};
 
 function mapSetup_dm() {
 	var map = new L.Map("map", {
@@ -505,7 +524,7 @@ function summarySentence_dm(usageDifference, percentDifference, targetValue, hrN
 function main(){
 
 	// style setup
-	styleSetup()	
+	styleSetup()
 	smoothScroll('#extraUtility') // prescribe starting div
 
 	// visualization setup
@@ -513,4 +532,6 @@ function main(){
 	standardsSetup();
 	tsSetup();
 	mapSetup_dm();
+
+	dataToggle('#popData', '#'+config.column_names.population, setup=true);
 }

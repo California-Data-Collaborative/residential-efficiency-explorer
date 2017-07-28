@@ -73,6 +73,21 @@ td {
  margin: 0 !important;
 }
 
+.halfleftpadding {
+ padding-left: 7.5px !important;
+ /*margin: 0 !important;*/
+}
+
+.halfrightpadding {
+ padding-right: 7.5px !important;
+ /*margin: 0 !important;*/
+}
+
+.fixed-width {
+  width: 143px !important;
+}
+
+
 .section {
 	background-color: white;
 }
