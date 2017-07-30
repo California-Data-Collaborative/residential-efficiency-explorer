@@ -166,15 +166,20 @@
         <div id="dataSelection">
           <div class="form-group">
             <div class="input-group">
+             
               <span class="input-group-addon fixed-width" id="popData-addon">
                 Population
                 <!-- <i class="glyphicon glyphicon-user"></i> -->
               </span>
+               <div>
               <input type="text" class="form-control" id="popData" aria-describedby="popData-addon" disabled>
+              </div>
               <div class="input-group-btn dropup">
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></button>
+                <a tabindex="0" class="btn btn-default" id="popData_wrapper" data-toggle="popover" data-title="Data Source Note" aria-expanded="false"><i class="glyphicon glyphicon-info-sign"></i>
+                </a>
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="glyphicon glyphicon-menu-hamburger"></i></button>
                 <ul class="dropdown-menu dropdown-menu-right">
-                  <li><a id="census_block_pop" href="javascript: dataToggle('#popData', '#census_block_pop');">2010 Census Block Population</a></li>
+                  <li><a id="census_block_pop" href="javascript: dataToggle('#popData', '#census_block_pop');">Census Block Population (2010)</a></li>
                   <li><a id="hhsize" href="javascript: dataToggle('#popData', '#hhsize');">Household Size (Sum)</a></li>
                 </ul>
               </div>
@@ -245,10 +250,10 @@
 
 <script src="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/cartodb.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script src='js/libs/metricsgraphics.js'></script>
 <script src="https://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script type="text/javascript" src="js/objects.js"></script>
 <script type="text/javascript" src="js/script.js"></script>
 <script>

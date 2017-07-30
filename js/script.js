@@ -58,16 +58,27 @@ function styleSetup() {
 		tsSetup()
 	});
 
-	//turn popovers on, and open landscape area quality considerations
-	// $(function () {
-	// 	$('[data-toggle="popover"]').popover()
-	// 	$('#popData-addon').popover({
-	// 		'placement':'right',
-	// 		'trigger': 'focus',
-	// 		'tabindex': "0"
-	// 	})
-	// 	$('.popover-content').scrollTop(730);
-	// })
+	//turn popovers and/or tooltips on
+
+	$(function () {
+		// $('#popData_wrapper').tooltip('destroy')
+		$('[data-toggle="popover"]').popover({
+			'trigger': 'focus',
+			'placement' : 'top',
+			'html' : 'true',
+			'tabindex': "0"
+		})
+		$('[data-toggle="dropdown"]').dropdown()
+
+
+		// $('[data-toggle="popover"]').popover()
+		// $('#popData-addon').popover({
+		// 	'placement':'top',
+		// 	'trigger': 'focus',
+		// 	'tabindex': "0"
+		// }
+		// $('.popover-content').scrollTop(730);
+	})
 };
 
 // function styleSetup() {
@@ -332,8 +343,22 @@ function sliderSetup(datesTarget, tsTarget, legendTarget) {
 };
 
 function dataToggle(displayForm_id, colName_id, setup=false) {
+	var disclaimers = {
+		"#hhsize" : "<p>Customers without explicit household size data are assigned a default value based on the 2016 Census Block Group average household size.</p><p> In the absence of reliable dwelling unit data, the total household sizes of larger RESIDENTIAL_MULTI customers with many units will be underestimated using this approach.</p>",
+		"#census_block_pop" : "<p>The most recent release of Census Block-level demographic data was 2010.</p><p>Population in areas that have experienced substantial development will be underestimated with this approach.</p>"
+	}
+
+
+	$(displayForm_id+"_wrapper")
+		.attr('data-content', disclaimers[colName_id])
+		.popover('fixTitle')
+	// if (setup == true){
+	// 	$(displayForm_id+"_wrapper").tooltip('show');
+ //      };
+
+
 	dataName = $(colName_id).html()
-	$(displayForm_id).val(dataName);
+	$(displayForm_id).val(dataName)
 
 	config.column_names.population = colName_id.substring(1)
 
