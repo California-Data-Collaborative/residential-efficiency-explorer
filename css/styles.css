@@ -122,6 +122,29 @@ td {
 	width: 100%;
 }
 
+#popData{
+  font-style: italic;
+}
+
+#popData_wrapper:hover {
+ z-index: 3;
+}
+#popData_wrapper:focus {
+ z-index: 3;
+}
+
+/*.popover.left {
+margin-left: -90px;
+}*/
+
+.popover.top {
+  margin-left: -60px;
+}
+
+.popover.top .arrow {
+  margin-left: 50px;
+}
+
 .ui-autocomplete {
   padding: 6px 12px;
   border-radius: 4px;
