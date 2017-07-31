@@ -345,7 +345,7 @@ function sliderSetup(datesTarget, tsTarget, legendTarget) {
 function dataToggle(displayForm_id, colName_id, setup=false) {
 	var disclaimers = {
 		"#hhsize" : "<p>Customers without explicit household size data are assigned a default value based on the 2016 Census Block Group average household size.</p><p> In the absence of reliable dwelling unit data, the total household sizes of larger RESIDENTIAL_MULTI customers with many units will be underestimated using this approach.</p>",
-		"#census_block_pop" : "<p>The most recent release of Census Block-level demographic data was 2010.</p><p>Population in areas that have experienced substantial development will be underestimated with this approach.</p>"
+		"#census_block_pop" : "<p>The most recent release of Census Block-level demographic data was 2010.</p><p>Population in areas that have experienced substantial population change since 2010 (e.g. new development) will be incorrectly estimated with this approach.</p>"
 	}
 
 
