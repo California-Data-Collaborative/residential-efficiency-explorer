@@ -49,6 +49,44 @@ td {
   top:1px;
 }
 
+.equation{
+/*  margin-top: 30px;
+margin-bottom: 30px;*/
+overflow: scroll;
+}
+
+
+.panel.panel-horizontal {
+  display:table;
+  width:100%;
+  margin-bottom: 0px;
+  min-height: 66px !important;
+}
+
+.panel.panel-horizontal > .panel-heading, .panel.panel-horizontal > .panel-body, .panel.panel-horizontal > .panel-footer {
+  display:table-cell;
+  vertical-align: middle;
+  text-align: center;
+
+  padding: 5px;
+}
+.panel.panel-horizontal > .panel-heading, .panel.panel-horizontal > .panel-footer {
+  /*width: 25%;*/
+  border:0;
+  vertical-align: middle;
+
+}
+.panel.panel-horizontal > .panel-heading {
+  border-right: 1px solid #ddd;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 4px;
+}
+.panel.panel-horizontal > .panel-footer {
+  border-left: 1px solid #ddd;
+  border-top-left-radius: 0;
+  border-bottom-right-radius: 4px;
+}
+
 #summarySentence label {
 	white-space: nowrap;
   font-size: 93%;

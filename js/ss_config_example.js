@@ -15,7 +15,12 @@ var config = {
 		"irrigable_area": "<COL_NAME>",
 		"average_eto": "<COL_NAME>",
 		"usage": "<COL_NAME>",
-		"hr_name": "<COL_NAME>"
+		"hr_name": "<COL_NAME>",
+		"ed" : "<COL_NAME>",
+		"limited_english" : "<COL_NAME>",
+		"income" : "<COL_NAME>",
+		"year_built" : "<COL_NAME>"
+		
 	},
 	"conversion_to_gal" : "<CONVERSION_FACTOR>"
 }
@@ -39,4 +44,8 @@ config.column_names.population = ""
 config.column_names.irrigable_area = "" // square footage of irrigable area
 config.column_names.average_eto = ""
 config.column_names.usage = ""
+config.column_names.ed = ""
+config.column_names.limited_english = ""
+config.column_names.income = ""
+config.column_names.year_built = ""
 config.conversion_to_gal = ""
