@@ -57,12 +57,22 @@ var cartography = {
 	`
 	<div class="cartodb-tooltip-content-wrapper light">
 	<div class="cartodb-tooltip-content">
+	<h3>Block-level</h3>
 	<h4>FIPS code</h4>
 	<p>{{hr_name}}</p>
 	<h4>Percent Over/Under Target</h4>
 	<p>{{percentdifference}}%</p>
 	<h4>Population</h4>
 	<p>{{population}}</p>
+	<h3>Group-level</h3>
+	<h4>Median Income</h4>
+	<p>\${{income}}</p>
+	<h4>Median Year Structure Built</h4>
+	<p>{{year_built}}</p>
+	<h4>Characteristic Education</h4>
+	<p>{{ed}}</p>
+	<h4>Primary Limited English Speaking Household Language</h4>
+	<p>{{limited_english}}</p>
 	</div>
 	</div>
 	`
@@ -76,17 +86,23 @@ choropleth = new cdb.geo.ui.Legend({
 	show_title: true,
 	title: "Percent over/under Target",
 	data: [{
-			value: "< 0%"
+			value: "------------ 0% -------- 16% ------- 33% ------- 50% ----------"
 		}, {
-			value: "> 50%"
+			value: ""
 		}, {
 			name: "bin1",
 			value: "#3EAB45"
 		}, {
 			name: "bin2",
-			value: "#D9C24F"
+			value: "#B9D14C"
 		}, {
 			name: "bin3",
+			value: "#D9C24F"
+		}, {
+			name: "bin4",
+			value: "#D99F4F"
+		},		{
+			name: "bin5",
 			value: "#D9534F"
 		}]
 	})
@@ -125,7 +141,9 @@ if (config.geom_type == "point") {
 		marker-width: ramp([population], range(5, 30), jenks(10)); }
 
 		#table [ percentdifference > 50] {marker-fill: #D9534F;}
-		#table [ percentdifference <= 50] { marker-fill: #D9C24F; }
+		#table [ percentdifference <= 50] { marker-fill: #D99F4F; }
+		#table [ percentdifference <= 33] { marker-fill: #D9C24F; }
+		#table [ percentdifference <= 16] { marker-fill: #B9D14C; }
 		#table [ percentdifference <= 0] { marker-fill: #3EAB45; }
 		`
 	}
@@ -139,8 +157,10 @@ else if (config.geom_type == "polygon") {
 			line-opacity: 0.8;
 		}
 
-		#table [ percentdifference >= 50] {polygon-fill: #D9534F;}
-		#table [ percentdifference < 50] {polygon-fill: #D9C24F;}
+		#table [ percentdifference > 50] {polygon-fill: #D9534F;}
+		#table [ percentdifference <= 50] {polygon-fill: #D99F4F;}
+		#table [ percentdifference <= 33] {polygon-fill: #D9C24F;}
+		#table [ percentdifference <= 16] {polygon-fill: #B9D14C;}
 		#table [ percentdifference <= 0] {polygon-fill: #3EAB45;}
 		`
 	};

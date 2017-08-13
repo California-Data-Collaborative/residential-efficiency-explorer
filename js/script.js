@@ -165,7 +165,13 @@ function generateQuery(where_clause, allDates=false) {
 			${config.attribute_table}.${config.column_names.average_eto},
 			${config.attribute_table}.${config.column_names.usage},
 			${config.attribute_table}.${config.column_names.date},
-			${config.attribute_table}.${config.column_names.hr_name} hr_name
+			${config.attribute_table}.${config.column_names.hr_name} hr_name,
+			${config.attribute_table}.${config.column_names.ed} ed,
+			${config.attribute_table}.${config.column_names.income} income,
+			${config.attribute_table}.${config.column_names.limited_english} limited_english,
+			${config.attribute_table}.${config.column_names.year_built} year_built
+
+
 		FROM
 			${config.geometry_table},
 			${config.attribute_table}
@@ -178,6 +184,10 @@ function generateQuery(where_clause, allDates=false) {
 			the_geom_webmercator,
 			Min(cartodb_id) cartodb_id,
 			Min(hr_name) hr_name,
+			Min(ed) ed,
+			Min(income) income,
+			Min(limited_english) limited_english,
+			Min(year_built) year_built,
 			${config.column_names.unique_id},
 			ROUND(AVG(${config.column_names.population})) population,
 			SUM(${config.column_names.usage}*${config.conversion_to_gal}) * 3.06889*10^(-6) af_usage,
@@ -250,7 +260,7 @@ function generateQuery(where_clause, allDates=false) {
 			min_x: mn,//utilityData.rows[0][config.column_names.date],
 			max_x: mx,//utilityData.rows[utilityData.total_rows - 1][config.column_names.date],
 			aggregate_rollover: true,
-			show_confidence_band: ['l_gal', 'u_gal'],
+			// show_confidence_band: ['l_gal', 'u_gal'],
 			decimals: 0,
         	target: "#ts", // the html element that the graphic is inserted in
         	x_accessor: config.column_names.date,  // the key that accesses the x value
@@ -408,14 +418,16 @@ function mapSetup_dm() {
 					var target_af = data.rows[0].target_af_round,
 					usagedifference = data.rows[0].usagedifference,
 					percentdifference = data.rows[0].percentdifference,
-					hrName = data.rows[0].hr_name;
+					hrName = data.rows[0].hr_name,
 					usage = data.rows[0].af_usage_round,
+					area = data.rows[0].irr_area,
+					pop = data.rows[0].population;
 					// uncertainty = data.rows[0].uncertainty,
 
 					// latLng = new L.LatLng(data.rows[0].lat, data.rows[0].lon);
 					// map.panTo(latLng);
 
-					summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage, place_change = true);
+					summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage, area, pop, place_change = true);
 					tsSetup()
 
 					console.log(`irrigated area: ${data.rows[0].irr_area}`)
@@ -455,7 +467,7 @@ var placeLayer = {
 	sublayers: [{
 		sql: generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false),
 		cartocss: cartography.cartocss,
-		interactivity: ['cartodb_id', 'irr_area', 'avg_eto', 'usagedifference', 'percentdifference', 'target_af_round', 'target_af', 'population', 'gal_usage', 'af_usage', 'af_usage_round', 'target_gal', 'hr_name', `${config.column_names.unique_id}`]
+		interactivity: ['year_built', 'ed', 'income', 'limited_english','cartodb_id', 'irr_area', 'avg_eto', 'usagedifference', 'percentdifference', 'target_af_round', 'target_af', 'population', 'gal_usage', 'af_usage', 'af_usage_round', 'target_gal', 'hr_name', `${config.column_names.unique_id}`]
 	}]
 };
 
@@ -496,8 +508,10 @@ var placeLayer = {
     		 			usagedifference = utilityData.rows[row].usagedifference,
     		 			percentdifference = utilityData.rows[row].percentdifference,
     		 			hrName = utilityData.rows[row].hr_name,
-    		 			usage = utilityData.rows[row].af_usage_round;
-    		 			summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage);
+    		 			usage = utilityData.rows[row].af_usage_round,
+    		 			area = utilityData.rows[row].irr_area,
+    		 			pop = utilityData.rows[row].population
+    		 			summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage, area, pop);
     		 			showFeature(utilityData.rows[row].cartodb_id);
     		 		};
     		 	};
@@ -520,8 +534,10 @@ var placeLayer = {
     		usagedifference = data.usagedifference,
     		percentdifference = data.percentdifference,
     		hrName = data.hr_name,
-    		usage = data.af_usage_round;
-    		summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage, place_change = true);
+    		usage = data.af_usage_round,
+    		area = data.irr_area,
+    		pop = data.population
+    		summarySentence_dm(usagedifference, percentdifference, target_af, hrName, usage, area, pop, place_change = true);
     		tsSetup(data.af_usage)
     		console.log(`irrigated area: ${data.irr_area}`)
     		console.log(`average eto: ${data.avg_eto}`)
@@ -531,7 +547,7 @@ var placeLayer = {
     });
 };
 
-function summarySentence_dm(usageDifference, percentDifference, targetValue, hrName, usage, place_change = false){
+function summarySentence_dm(usageDifference, percentDifference, targetValue, hrName, usage, area, pop, place_change = false){
 	if (usageDifference < 0) {
 		var differenceDescription = 'under'
 	} else {
@@ -542,6 +558,11 @@ function summarySentence_dm(usageDifference, percentDifference, targetValue, hrN
 	// <b>Residential Usage Target:</b> ${targetValue} acre-feet<br>
 	// <b>Efficiency:</b> ${Math.abs(usageDifference)} acre-feet <em>${differenceDescription}</em> target in this scenario | ${percentDifference}%
 	// `
+	
+	transition("#blockPop", pop)
+
+	rounded_area = parseInt(area)
+	transition("#irrArea", rounded_area + " sq ft")
 	transition("#targetValue", targetValue + " AF")
 	transition("#usage", usage + " AF")
 	transition("#efficiency", `${Math.abs(usageDifference)} AF <em>${differenceDescription}</em> target in this scenario | ${percentDifference}%`)
