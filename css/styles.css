@@ -87,6 +87,15 @@ overflow: scroll;
   border-bottom-right-radius: 4px;
 }
 
+#argoBrand{
+  font-weight: lighter;
+  width: 200px;
+  color: #66afe9;
+  float: right;
+  text-align: right;
+  padding-right: 0px !important;
+}
+
 #summarySentence label {
 	white-space: nowrap;
   font-size: 93%;
