@@ -13,13 +13,17 @@ a:hover {
 	color: #CECECE !important
 }
 a.selected {
-  color: white !important; 
+  color: white !important;
   background: #222;
 }
 
 td {
   font-style: italic;
 }
+
+.cartodb-tooltip {
+   z-index: 1000 !important;          
+   }
 
 
 .centered {
@@ -156,7 +160,7 @@ overflow: scroll;
     box-shadow: outset 0 1px 1px rgba(0, 0, 0, 0.075);
     -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
     transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-	
+
 }
 
 #tsLegend {
@@ -196,7 +200,7 @@ margin-left: -90px;
   padding: 6px 12px;
   border-radius: 4px;
   webkit-border-radius: 4px;
-  -moz-border-radius: 4px;  
+  -moz-border-radius: 4px;
 }
 
 .ui-autocomplete .ui-state-hover,
@@ -210,7 +214,7 @@ margin-left: -90px;
   padding: 1px 2px;
   border-radius: 4px;
   webkit-border-radius: 4px;
-  -moz-border-radius: 4px; 
+  -moz-border-radius: 4px;
   background-color: #eee !important;
   border: none !important;
 }

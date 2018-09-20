@@ -5,7 +5,8 @@ state = {
 	"startDate" : "<SCENARIO_START>",
 	"endDate" : "<SCENARIO_END>",
 	"gpcd" : "<GPCD>",
-	"pf" : "<PLANT_FACTOR>"
+	"pf" : "<PLANT_FACTOR>",
+	"savingsBreaks" : [0,0,0,0]
 }
 
 globals = {
@@ -36,7 +37,7 @@ function dataSetup(callback) {
 		url = `https://${config.account}.carto.com/api/v2/sql?q=${encoded_query}`
 		$.getJSON(url, function(dateData) {
 			state.endDate = dateData.rows[1][config.column_names.date];
-			state.startDate = dateData.rows[12][config.column_names.date]; 
+			state.startDate = dateData.rows[12][config.column_names.date];
 			state.gpcd = 55
 			state.pf = .8
 
@@ -62,6 +63,8 @@ var cartography = {
 	<p>{{hr_name}}</p>
 	<h4>Percent Over/Under Target</h4>
 	<p>{{percentdifference}}%</p>
+	<h4>Estimated Water Savings From Rebates</h4>
+	<p>{{savings}} ccf</p>
 	<h4>Population</h4>
 	<p>{{population}}</p>
 	<h3>Group-level</h3>
@@ -81,29 +84,54 @@ var cartography = {
 
 // define legend
 // (should probably be contained within some cartographySetup() function for increased elegance)
+// choropleth = new cdb.geo.ui.Legend({
+// 	type: "choropleth",
+// 	show_title: true,
+// 	title: "Percent over/under Target",
+// 	data: [{
+// 			value: "------------ 0% -------- 16% ------- 33% ------- 50% ----------"
+// 		}, {
+// 			value: ""
+// 		}, {
+// 			name: "bin1",
+// 			value: "#3EAB45"
+// 		}, {
+// 			name: "bin2",
+// 			value: "#B9D14C"
+// 		}, {
+// 			name: "bin3",
+// 			value: "#D9C24F"
+// 		}, {
+// 			name: "bin4",
+// 			value: "#D99F4F"
+// 		},		{
+// 			name: "bin5",
+// 			value: "#D9534F"
+// 		}]
+// 	})
 choropleth = new cdb.geo.ui.Legend({
 	type: "choropleth",
 	show_title: true,
-	title: "Percent over/under Target",
+	title: "Estimated Water Savings",
 	data: [{
-			value: "------------ 0% -------- 16% ------- 33% ------- 50% ----------"
+			value: "0"
 		}, {
-			value: ""
+			value: "50"
 		}, {
 			name: "bin1",
-			value: "#3EAB45"
+			value: "#BFE5EB"
 		}, {
 			name: "bin2",
-			value: "#B9D14C"
+			value: "#95D4DE"
 		}, {
 			name: "bin3",
-			value: "#D9C24F"
+			value: "#6BC3D1"
 		}, {
 			name: "bin4",
-			value: "#D99F4F"
+			value: "#41B2C4"
 		},		{
 			name: "bin5",
-			value: "#D9534F"
+			value: "#17A2B8"
 		}]
 	})
 
@@ -131,7 +159,7 @@ else if (config.geom_type == "polygon") {
 if (config.geom_type == "point") {
 	cartography.cartocss =
 	`#table {
-		marker-fill-opacity: .75;
+		marker-fill-opacity: .6;
 		marker-line-width: 0;
 		marker-width: 10;
 		marker-fill: #333;
@@ -163,4 +191,20 @@ else if (config.geom_type == "polygon") {
 		#table [ percentdifference <= 16] {polygon-fill: #B9D14C;}
 		#table [ percentdifference <= 0] {polygon-fill: #3EAB45;}
 		`
+		// cartography.cartocss =
+		// `#table {
+		// 	polygon-fill: #333;
+		// 	polygon-opacity: .9;
+		// 	line-width: 0.2;
+		// 	line-color: #222;
+		// 	line-opacity: 0.8;
+		// }
+		//
+		// #table [ savings > 50] {polygon-fill: #17A2B8;}
+		// #table [ savings <= 50] {polygon-fill: #41B2C4;}
+		// #table [ savings <= 33] {polygon-fill: #6BC3D1;}
+		// #table [ savings <= 16] {polygon-fill: #95D4DE;}
+		// #table [ savings <= 0] {polygon-fill: #BFE5EB;}
+		//
+		// `
 	};

@@ -1,3 +1,13 @@
+function getMax(arr, prop) {
+    var max;
+    for (var i=0 ; i<arr.length ; i++) {
+        if (!max || parseInt(arr[i][prop]) > parseInt(max[prop]))
+            max = arr[i];
+    }
+    return max;
+}
+
+
 // style components
 nav_height = $(".navbar").height();
 
@@ -15,7 +25,7 @@ function styleSetup() {
 		},
 		1000
 	)
-	
+
 	// make sure correct section is highlighted
 	function selectSection(){
 		var window_top = 1.5*$(window).scrollTop();
@@ -124,7 +134,7 @@ function generateQuery(where_clause, allDates=false) {
 	var milliunix_start = new Date(state.startDate).getTime(),
 	milliunix_end = new Date(state.endDate).getTime(),
 		dayRange = (milliunix_end - milliunix_start)*1.1574*.00000001 + 30.437; // convert milliunix to days
-		
+
 
 
 		var tsQuery = `
@@ -139,6 +149,7 @@ function generateQuery(where_clause, allDates=false) {
 			)
 		SELECT
 			*,
+			savings*748 savings_gal,
 			CASE
 				WHEN target_af != 0
 				THEN ROUND(100 * (${config.column_names.usage}*${config.conversion_to_gal} * 3.06889*10^(-6) - target_af) / CAST(target_af AS FLOAT))
@@ -182,7 +193,8 @@ function generateQuery(where_clause, allDates=false) {
 			${config.attribute_table}.${config.column_names.ed} ed,
 			${config.attribute_table}.${config.column_names.income} income,
 			${config.attribute_table}.${config.column_names.limited_english} limited_english,
-			${config.attribute_table}.${config.column_names.year_built} year_built
+			${config.attribute_table}.${config.column_names.year_built} year_built,
+			savings
 
 
 		FROM
@@ -193,7 +205,7 @@ function generateQuery(where_clause, allDates=false) {
 
 			),
 		cte_targets AS
-		(SELECT     
+		(SELECT
 			the_geom_webmercator,
 			Min(cartodb_id) cartodb_id,
 			Min(hr_name) hr_name,
@@ -207,6 +219,7 @@ function generateQuery(where_clause, allDates=false) {
 			SUM(${config.column_names.usage}*${config.conversion_to_gal}) gal_usage,
 			AVG(${config.column_names.average_eto}) avg_eto,
 			AVG(${config.column_names.irrigable_area}) irr_area,
+			SUM(savings) savings,
 			SUM(${config.column_names.population} * ${state.gpcd} * 30.437 * 3.06889*10^(-6) + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62 * 3.06889*10^(-6)) AS target_af,
 			SUM(${config.column_names.population} * ${state.gpcd} * 30.437 + ${config.column_names.irrigable_area} * ${config.column_names.average_eto} * ${state.pf} * .62) AS target_gal
 		FROM cte_otf
@@ -241,7 +254,7 @@ function generateQuery(where_clause, allDates=false) {
 
 		if (allDates == true) {
 			return tsQuery
-		} else { 
+		} else {
 			return query
 		}
 	};
@@ -277,8 +290,8 @@ function generateQuery(where_clause, allDates=false) {
 			decimals: 0,
         	target: "#ts", // the html element that the graphic is inserted in
         	x_accessor: config.column_names.date,  // the key that accesses the x value
-        	y_accessor: ['target_gal', 'gal_usage'], // the key that accesses the y value
-        	legend:  ['Target', 'Water Use'],
+        	y_accessor: ['target_gal', 'gal_usage', 'savings_gal'], // the key that accesses the y value
+        	legend:  ['Target', 'Water Use', 'Estimated Savings'],
         	legend_target: "#tsLegend"
         });
 		d3.selectAll('.label')
@@ -341,7 +354,7 @@ function sliderSetup(datesTarget, tsTarget, legendTarget) {
 		stop: function (event, ui) {
 			var startDate = dates[ui.values[0]],
 			endDate = dates[ui.values[1]]
-			
+
 			state.startDate = `${formatter_long(new Date(startDate))}`
 			state.endDate = `${formatter_long(new Date(endDate))}`
 			query = generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false);
@@ -351,7 +364,7 @@ function sliderSetup(datesTarget, tsTarget, legendTarget) {
 		slide: function(event, ui) {
 			var startDate = dates[ui.values[0]],
 			endDate = dates[ui.values[1]]
-			
+
 			state.startDate = `${formatter_long(new Date(startDate))}`
 			state.endDate = `${formatter_long(new Date(endDate))}`
 			tsSetup()
@@ -463,11 +476,11 @@ function showFeature(cartodb_id) {
 	sql.execute(`select ST_Centroid(the_geom) as the_geom from ${config.geometry_table} where cartodb_id = {{cartodb_id}}`, {cartodb_id: cartodb_id} )
 	.done(function(geojson) {
 		if (polygon) {
-			
+
 			map.removeLayer(polygon);
 
 		}
-		polygon = L.geoJson(geojson, { 
+		polygon = L.geoJson(geojson, {
 			style: {}
 		}).addTo(map);
 	});
@@ -480,7 +493,7 @@ var placeLayer = {
 	sublayers: [{
 		sql: generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false),
 		cartocss: cartography.cartocss,
-		interactivity: ['year_built', 'ed', 'income', 'limited_english','cartodb_id', 'irr_area', 'avg_eto', 'usagedifference', 'percentdifference', 'target_af_round', 'target_af', 'population', 'gal_usage', 'af_usage', 'af_usage_round', 'target_gal', 'hr_name', `${config.column_names.unique_id}`]
+		interactivity: ['savings','year_built', 'ed', 'income','limited_english','cartodb_id', 'irr_area', 'avg_eto', 'usagedifference', 'percentdifference', 'target_af_round', 'target_af', 'population', 'gal_usage', 'af_usage', 'af_usage_round', 'target_gal', 'hr_name', `${config.column_names.unique_id}`]
 	}]
 };
 
@@ -489,7 +502,7 @@ var placeLayer = {
     	attribution: 'Powered by <a href="http://www.argolabs.org/">ARGO</a> | &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors</a>'
     }).addTo(map);
 
-    $("#map").append(cartography.legend.render().el);
+    // $("#map").append(cartography.legend.render().el);
 
 
     cartodb.createLayer(map, placeLayer, options = {
@@ -510,11 +523,24 @@ var placeLayer = {
     		fields: [{ population:'population'}] // Unclear how this option operates
     	});
 
-    	layer.on('loading', function() {
+
+    	layer.on('loading', function(e, latlng, pos, data) {
+
     		query = generateQuery(where_clause=`WHERE ${config.column_names.date} BETWEEN '${state.startDate}' AND '${state.endDate}'`, allDates=false);
     		encoded_query = encodeURIComponent(query);
     		 url = `https://${config.account}.carto.com/api/v2/sql?q=${encoded_query}`;
     		 $.getJSON(url, function(utilityData) {
+
+					 layerSavingsMax = getMax(utilityData.rows, 'savings').savings
+					 state.savingsBreaks[0] = 0
+					 state.savingsBreaks[1] = (1/4)*layerSavingsMax
+					 state.savingsBreaks[2] = (2/4)*layerSavingsMax
+					 state.savingsBreaks[3] = (3/4)*layerSavingsMax
+
+					 console.log(layerSavingsMax)
+
+					 // console.log(layerSavingsMax.savings/5)
+					 // console.log(utilityData.rows)
     		 	for (row in utilityData.rows) {
     		 		if (utilityData.rows[row][config.column_names.unique_id] == state.placeID) {
     		 			var target_af = utilityData.rows[row].target_af_round,
@@ -531,7 +557,7 @@ var placeLayer = {
     		 });
     		});
 
-    	
+
     	globals.sublayers[0].on('featureOver', function(e, latlng, pos, data) {
     		$("#map").css('cursor', 'pointer')
     	});
@@ -554,7 +580,7 @@ var placeLayer = {
     		tsSetup(data.af_usage)
     		console.log(`irrigated area: ${data.irr_area}`)
     		console.log(`average eto: ${data.avg_eto}`)
-    		
+
     	});
     	searchSetup()
     });
@@ -571,7 +597,7 @@ function summarySentence_dm(usageDifference, percentDifference, targetValue, hrN
 	// <b>Residential Usage Target:</b> ${targetValue} acre-feet<br>
 	// <b>Efficiency:</b> ${Math.abs(usageDifference)} acre-feet <em>${differenceDescription}</em> target in this scenario | ${percentDifference}%
 	// `
-	
+
 	transition("#blockPop", pop)
 
 	rounded_area = parseInt(area)
@@ -586,6 +612,164 @@ function summarySentence_dm(usageDifference, percentDifference, targetValue, hrN
 	// transition("#summarySentence", summary)
 };
 
+function legendSetup(){
+	$(function () {
+		$('.legend-title')
+		.html(
+		` <div class="input-group">
+
+
+            <div>
+              <input type="text" class="form-control" id="qualityMeasure" aria-describedby="qualityMeasure-addon" disabled>
+            </div>
+            <div class="input-group-btn dropup">
+              <!-- <button tabindex="0" class="btn btn-default" id="qualityMeasure_wrapper" data-toggle="popover" data-title="Ride Quality Measure Note" aria-expanded="false"><i class="glyphicon glyphicon-info-sign"></i></button>-->
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="glyphicon glyphicon-menu-hamburger"></i></button>
+              <ul class="dropdown-menu dropdown-menu-right">
+							<li><a id="score" href="javascript: legendToggle('#qualityMeasure', '#score');">Percent over/under Target</a></li>
+                <li><a id="raw" href="javascript: legendToggle('#qualityMeasure', '#raw');">Estimated Water Savings from Rebates</a></li>
+              </ul>
+            </div>
+          </div>`
+		)
+	$(".min").css("text-transform" , "lowercase")
+	$(".max").css("text-transform" , "lowercase")
+	$('.cartodb-legend-stack').css({
+			"margin-left" : "15px",
+			"margin-right" : "-5px"
+		})
+
+		$('.cartodb-legend').css({
+				"left" : "20px"
+			})
+
+	$('[data-toggle="popover"]').popover({
+			'trigger': 'focus',
+			'placement' : 'top',
+			'html' : 'true',
+			'tabindex': "0"
+		})
+		$('[data-toggle="dropdown"]').dropdown()
+
+	})
+}
+
+function legendToggle(displayForm_id, colName_id, setup=false) {
+	console.log(state.savingsBreaks[0])
+	console.log(state.savingsBreaks[1])
+	console.log(state.savingsBreaks[2])
+	console.log(state.savingsBreaks[3])
+
+
+	legends = {
+		"#raw" : new cdb.geo.ui.Legend({
+			type: "choropleth",
+			show_title: true,
+			title: "Estimated Water Savings",
+			data: [{
+					value: "0"
+				}, {
+					value: "50"
+				}, {
+					name: "bin1",
+					value: "#BFE5EB"
+				}, {
+					name: "bin2",
+					value: "#95D4DE"
+				}, {
+					name: "bin3",
+					value: "#6BC3D1"
+				}, {
+					name: "bin4",
+					value: "#41B2C4"
+				},		{
+					name: "bin5",
+					value: "#17A2B8"
+				}]
+			}),
+		"#score" : new cdb.geo.ui.Legend({
+			type: "choropleth",
+			show_title: true,
+			title: "Percent over/under Target",
+			data: [{
+					value: "0%"
+				}, {
+					value: ">50%"
+				}, {
+					name: "bin1",
+					value: "#3EAB45"
+				}, {
+					name: "bin2",
+					value: "#B9D14C"
+				}, {
+					name: "bin3",
+					value: "#D9C24F"
+				}, {
+					name: "bin4",
+					value: "#D99F4F"
+				},		{
+					name: "bin5",
+					value: "#D9534F"
+				}]
+			})
+	}
+
+
+	var disclaimers = {
+		"#score" : "<p>Customers without explicit household size data are assigned a default value based on the 2016 Census Block Group average household size.</p><p> In the absence of reliable dwelling unit data, the total household sizes of larger RESIDENTIAL_MULTI customers with many units will be underestimated using this approach.</p>",
+		"#raw" : "<p>The most recent release of Census Block-level demographic data was 2010.</p><p>Population in areas that have experienced substantial population change since 2010 (e.g. new development) will be incorrectly estimated with this approach.</p>"
+	}
+
+	var legendText = {
+		"#score" : ["0%", ">50%"],
+		"#raw" : [`<= ${state.savingsBreaks[0]} ccf`, `>= ${state.savingsBreaks[3]} ccf`]
+	}
+
+
+	var cartoCSS = {
+		"#score" : cartography.cartocss,
+		"#raw" : `
+
+		#table {
+			polygon-fill: #333;
+			polygon-opacity: .9;
+			line-width: 0.2;
+			line-color: #222;
+			line-opacity: 0.8;
+		}
+
+		#table [ savings >= ${state.savingsBreaks[3]}] {polygon-fill: #17A2B8;}
+		#table [ savings < ${state.savingsBreaks[3]}] {polygon-fill: #41B2C4;}
+		#table [ savings <= ${state.savingsBreaks[2]}] {polygon-fill: #6BC3D1;}
+		#table [ savings <= ${state.savingsBreaks[1]}] {polygon-fill: #95D4DE;}
+		#table [ savings <= ${state.savingsBreaks[0]}] {polygon-fill: #BFE5EB;}
+		`
+	}
+
+	$(".cartodb-legend").remove()
+	$("#map").append(legends[colName_id].render().el);
+	legendSetup();
+
+	$(displayForm_id+"_wrapper")
+		.attr('data-content', disclaimers[colName_id])
+		.popover('fixTitle')
+
+	dataName = $(colName_id).html()
+	$(displayForm_id).val(dataName)
+
+	// transition('.min', legendText[colName_id][0])
+	// transition('.max', legendText[colName_id][1])
+	$('.min').html(legendText[colName_id][0])
+	$('.max').html(legendText[colName_id][1])
+
+	if (setup == false){
+		globals.sublayers[0].setCartoCSS(cartoCSS[colName_id])
+	};
+
+
+
+
+}
 
 // app build
 function main(){
@@ -599,6 +783,9 @@ function main(){
 	standardsSetup();
 	tsSetup();
 	mapSetup_dm();
+	legendToggle('#qualityMeasure', '#score', setup=true);
+
 
 	dataToggle('#popData', '#'+config.column_names.population, setup=true);
+
 }
