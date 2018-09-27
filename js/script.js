@@ -281,6 +281,7 @@ function generateQuery(where_clause, allDates=false) {
 			y_extended_ticks: true,
 			x_extended_ticks: true,
 			markers: markers,
+			transition_on_update: false,
 			xax_format: d3.time.format('%b'),
 			y_label: 'Water Volume (Gal)',
 			min_x: mn,//utilityData.rows[0][config.column_names.date],
